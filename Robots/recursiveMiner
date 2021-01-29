@@ -1,0 +1,151 @@
+g = require("component").geolyzer
+robot = require("robot")
+sides = require("sides")
+
+-- Table with Ores
+local ores = {
+  "minecraft:diamond_ore",
+  "minecraft:iron_ore",
+  "minecraft:gold_ore",
+  "minecraft:coal_ore",
+  "minecraft:redstone_ore",
+  "minecraft:lit_redstone_ore",
+  "minecraft:lapis_ore",
+  "minecraft:emerald_ore",
+  "abyssalcraft:nitreore"
+}
+
+local depth = 30
+local args = {...}
+if args[1] then
+  depth = tonumber(args[1])
+end
+
+-- Check if is an Ore
+function isOre(name)
+  for i=1, #ores do
+    if ores[i] == name then
+      return true
+    end
+  end
+  return false
+end
+
+function forward()
+  for i=0, 25 do
+    if robot.detect() then
+      robot.swing()
+    end
+    if robot.forward() then
+      return true
+    end
+    print("Error while moving, trying in a few seconds")
+    os.sleep(2)
+  end
+  return false
+end
+
+function ru(f, a)
+  if robot.detectUp() then
+    robot.swingUp()
+  end
+  d = robot.up()
+  if not d then
+    return
+  end
+  f(a)
+  robot.down()
+end
+
+function rd(f, a)
+  if robot.detectDown() then
+    robot.swingDown()
+  end
+  d = robot.down()
+  if not d then 
+    return
+  end
+  f(a)
+  robot.up()
+end
+
+function rf(f, a)
+  if robot.detect() then
+    robot.swing()
+  end
+  if not forward() then
+    return
+  end
+  f(a)
+  robot.back()
+end
+
+function rb(f, a)
+  robot.turnLeft()
+  robot.turnLeft()
+  if robot.detect() then
+    robot.swing()
+  end
+  if not forward() then
+    robot.turnLeft()
+    robot.turnLeft()
+    return
+  end
+  f(a)
+  robot.back()
+  robot.turnLeft()
+  robot.turnLeft()
+end
+
+function rl(f, a)
+  robot.turnLeft()
+  if robot.detect() then
+    robot.swing()
+  end
+  if not forward() then
+    robot.turnRight()
+    return
+  end
+  f(a)
+  robot.back()
+  robot.turnRight()
+end
+
+function rr(f, a)
+  robot.turnRight()
+  if robot.detect() then
+    robot.swing()
+  end
+  if not forward() then
+    robot.turnLeft()
+    return
+  end
+  f(a)
+  robot.back()
+  robot.turnLeft()
+end
+
+function get_ores()
+  if isOre(g.analyze(sides.down).name) then
+    rd(get_ores)
+  end
+  if isOre(g.analyze(sides.up).name) then
+    ru(get_ores)
+  end
+  if isOre(g.analyze(sides.forward).name) then
+    rf(get_ores)
+  end
+  if isOre(g.analyze(sides.back).name) then
+    rb(get_ores)
+  end
+  if isOre(g.analyze(sides.left).name) then
+    rl(get_ores)
+  end
+  if isOre(g.analyze(sides.right).name) then
+    rr(get_ores)
+  end
+end
+
+for i=0, depth do
+  get_ores()
+end
