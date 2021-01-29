@@ -126,6 +126,7 @@ function rr(f, a)
 end
 
 function get_ores()
+  print("Mining")
   if isOre(g.analyze(sides.down).name) then
     rd(get_ores)
   end
@@ -146,6 +147,18 @@ function get_ores()
   end
 end
 
+local upper_blocks = 0
+
 for i=0, depth do
   get_ores()
+  if robot.detectDown() then
+    robot.swingDown()
+  end
+  if robot.down() then
+    upper_blocks = upper_blocks + 1
+  end
+end
+
+for i=0, upper_blocks do
+  robot.up()
 end
