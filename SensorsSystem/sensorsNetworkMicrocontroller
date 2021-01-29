@@ -1,0 +1,53 @@
+-- EEPROM for a microcontroller sensor with motion sensors
+-- Need a server running in another machine and a modem
+-- that can connect to that server
+local modem = component.proxy(component.list("modem")())
+local sensor = component.proxy(component.list("motion_sensor")())
+
+
+local SENSORS_PORT = 2020
+
+local master_addr = nil
+
+modem.open(SENSORS_PORT)
+
+modem.broadcast(SENSORS_PORT, "register")
+
+function process_signals(event, ...)
+  -- print(event)
+  if(event == "modem_message") then
+  	
+  	dst, src, port, distance, command, data = ...
+  	
+  	if(command == "master") then
+  			master_addr = src
+  			--print("Now I have a master: " .. src)
+  			computer.beep(800, 0.2)
+  			computer.beep(1000, 0.4)
+  	end
+
+  	if(command == "echo" and data == "request") then
+  		modem.send(src, port, "echo", "reply")
+  	end
+
+  	if(command == "setSensitivity") then
+  		sensor.setSensitivity(data)
+  	end
+
+  	if(command == "getSensitivity") then
+  		modem.send(src, port, "sensitivity", sensor.getSensitivity())
+  	end
+
+  end
+  if(event == "motion") then
+  	device_addr, dx, dy, dz, entity = ...
+  	if(master_addr) then
+  		modem.send(master_addr, SENSORS_PORT, "motion", ...)
+  	end
+  	computer.beep(2000, 0.1)
+  end
+end
+
+while true do
+  process_signals(computer.pullSignal())
+end
